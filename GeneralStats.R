@@ -3,6 +3,8 @@ library(tidyverse)
 library(vegan)
 
 #Load snow prepared and cured in CombineData.R file:
+snow <- read.csv("VegSnowWindData_MasterFile.csv") #Master Data joined in CombineData.R file - early and late snow was combined in the excel as per email/cat (email title: "Original snow depth and density calculations sheet" )
+
 pre_veg_matrix <- read.csv("VegSnowWindData_MasterFile.csv") #As produced in CombineData.R file
 names(pre_veg_matrix) #Veg matrix is occupying columns between Acae_nova and Xero_subu
 
@@ -18,16 +20,18 @@ veg_matrix <- pre_veg_matrix %>%
   select( Acae_nova:Xero_subu ) #Select Species only
 
 length(names(veg_matrix)) #Total species number = 109
-
+View(veg_matrix)
 
 #Trait Table of 6 focus plant (Height, LAI, Area_cm3)======
 #Exclude non-shrubs
+snow <- read.csv("VegSnowWindData_MasterFile.csv") #Master Data joined in CombineData.R file - early and late snow was combined in the excel as per email/cat (email title: "Original snow depth and density calculations sheet" )
+
 snow2 <- snow %>% 
   filter(! shrub =="Open.grassy") %>%  #Exclude grassy areas as these had no aspect accounted for
   filter(! shrub =="Closed.heath")      #Exclude "Closed.heath" areas as these had no aspect accounted for nor veg survey undertaken.
 
 unique(snow2$shrub) #6 focus plants were: "Grevillea.australis",  "Hovea.montana" ,"Orites.lanceolata" , "Epacris.petrophylla","Ozothamnus.alpina",  "Nematolepis.ovatifolia"
-dim(snow2)#2336 rows of data
+dim(snow2)#2334rows of data
 
 summary(snow2$height_cm)#Summary of focus shrub plant height_cm:
 #Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
@@ -36,21 +40,23 @@ sd(snow2$height_cm, na.rm = TRUE)#19.23388
 
 #HEIGHT by FOCUS SPECIES:
 Six_height_cm <- snow2 %>%
-  group_by(shrub) %>%
+  group_by(shrub, genus_species, shrub_genus, shrub_species) %>%
   summarize( mean_height_cm = round (mean (height_cm, na.rm=T),1),
              n_height_cm = length(height_cm),
              sd_height_cm = round (sd(height_cm, na.rm=T),1),
              se_height_cm = round ( sd_height_cm/sqrt(n_height_cm),1),
              
-             mean_LAI = round (mean (LAI, na.rm=T),1),
-                        n_LAI = length(LAI),
-                        sd_LAI = round (sd(LAI, na.rm=T),1),
-                        se_LAI = round ( sd_LAI/sqrt(n_LAI),1),
+             mean_LAI = round (mean (leaf.area.index, na.rm=T),1),
+             n_LAI = length(leaf.area.index),
+             sd_LAI = round (sd(leaf.area.index, na.rm=T),1),
+             se_LAI = round ( sd_LAI/sqrt(n_LAI),1),
+             
              
              mean_area_cm3 = round (mean (area_cm3, na.rm=T),1),
              n_area_cm3 = length(area_cm3),
              sd_area_cm3 = round (sd(area_cm3, na.rm=T),1),
              se_area_cm3 = round ( sd_area_cm3/sqrt(n_area_cm3),1))
+  
 
              
 
@@ -58,23 +64,94 @@ Six_height_cm
 #write.table(Six_height_cm, file = "TRAITsumstats.txt", sep = ",", quote = FALSE, row.names = F)  #Save as table.txt and then copy into Word, 
 #in Word to get a Word-Table, select it all, go to Table → Convert → Convert Text to Tabl3
 
+#Turn Table 1 (Six_height_cm) into Plot===========
+names(Six_height_cm)
+
+#Panel Plot of Table 1:
+s1 <- ggplot(Six_height_cm, aes( x =  "", y=mean_height_cm)) +
+  geom_point(aes(size = as.numeric(mean_area_cm3), fill=mean_LAI),shape=21, colour = "black")+
+  scale_size(range = c(2,20))+
+  scale_y_continuous(limits = c(0, 80))+
+  scale_fill_gradient(low = "grey", high = "black")+
+  facet_grid(.~shrub_genus + shrub_species) +
+  
+  
+  theme_classic()+
+  labs( x = "Target shrub", y = "Average target shrub height (cm)",
+        size = "Area:",  fill = "LAI:")+
+  theme(axis.text.x = element_blank(),   #text(size=16,hjust=.5,angle=45,vjust=1,face="italic", color="black"),
+        axis.text.y = element_text(size=16, hjust=.5,vjust=0,face="plain", color="black"),  
+        axis.title.x = element_blank(),    #text(size=22,hjust=0.5,vjust=9,face="plain"),
+        axis.title.y = element_text(size=22),
+        axis.ticks.x.bottom = element_blank(),
+        plot.title = element_text(size=20, lineheight=1.8, face="bold", hjust = 0.5),
+        legend.title = element_text(size=16, face="bold"),
+        legend.text = element_text(size = 8),
+        legend.key = element_rect( fill = "white", color = "black"),
+        legend.box.background = element_rect(),
+        legend.box.margin = margin(6, 6, 6, 6),
+        legend.direction="horizontal",
+        legend.box = "horizontal",
+        strip.text=element_text(size=14, face = "italic"),
+        strip.background = element_rect(colour="white"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        legend.position = c(0.5 , 0.15)) 
+
+s1
+#ggsave(s1, dpi=300, width = 2401, height = 2037, units = "px", filename = "Table1_PlotNew.jpg")
+
+
+
+
+#Point Plot (optional):
+s2 <-ggplot(Six_height_cm, aes( x =  genus_species, y=mean_height_cm)) +
+  geom_point(aes(size = as.numeric(mean_area_cm3), fill=mean_LAI),shape=21, colour = "black")+
+  scale_size(range = c(2,20))+
+  scale_y_continuous(limits = c(20, 80))+
+  scale_fill_gradient(low = "grey", high = "black")+
+  
+  
+  
+  theme_classic()+
+  labs( x = "", y = "Average target shrub height (cm)",
+        fill = "LAI:", size = "Area:")+
+  theme(axis.text.x = element_text(size=14,angle= 30, face="italic", color="black"),
+        axis.text.y = element_text(size=14, hjust=.5,vjust=0,face="plain", color="black"),  
+        #axis.title.x = element_text(size=22,hjust=0.5,vjust=9,face="plain"),
+        axis.title.y = element_text(size=22),
+        plot.title = element_text(size=20, lineheight=1.8, face="bold", hjust = 0.5),
+        legend.title = element_text(size=8,, face="bold"),
+        legend.text = element_text(size = 6),
+        legend.key = element_rect( fill = "white", color = "black"),
+        legend.box.background = element_rect(),
+        #legend.box.margin = margin(6, 6, 6, 6),
+        legend.position = c(0.1,0.65)) 
+
+#ggsave(s2, dpi=300, width = 2401, height = 2037, units = "px", filename = "Table1_Plot.jpg")
+
+
+
+
+
 
 #Richness and rare species names:=======
 round (mean(snow$Richness,na.rm = T) , 1) # 10.8
 round (sd (snow$Richness,na.rm = T), 1) #3.7
 
-
+#Total Species Table (Full name, frequencies, life forms)========
 #Remove Singletons columns:
 occur.cols <- apply(veg_matrix,2,sum)#sum species occurrences in each column
 zero_species <- as.data.frame(occur.cols) %>% filter(occur.cols == 0) #Check for zero species
-zero_species # NONE! YAY!
+zero_species # Cras_grac= 0 
   
 #Turn fraction into integers to continue  ordination in vegan:
-veg.matrix2 <- veg_matrix %>% mutate_if (is.numeric, round, digits =0)
+veg.matrix2 <- veg_matrix %>% mutate_if (is.numeric, round, digits = 0)
 
 #Remove zero species/ singletons:
 good.matrix <- veg.matrix2 [ , ! occur.cols <= 0  ] #removing all 0-sum columns
-dim(good.matrix) #242 109
+dim(good.matrix) #1493  112
 
 
 #Species Frequencies:
@@ -101,7 +178,6 @@ names(LifeFormData)#Columns: SpecID","LifeForm"
 new_order_LifeForms <- left_join(new_order, LifeFormData , by = "SpecID" )
 View(new_order_LifeForms)
 
-#Total Species Table (Full name, frequencies, life forms)========
 SpeciesList <- read.csv("SpecID_FullSpeciesName_List.csv")
 Match_Sp <- left_join(new_order_LifeForms, SpeciesList, by = "SpecID") #full species names by matching new_order with Species List:
 View(Match_Sp)
@@ -203,7 +279,7 @@ round( summary(snow$Wind_Max),1)
 round( sd(snow$Wind_Max, na.rm=T),1) # 3.4
 
 #LAI from raw alpine.data.csv:==========
-raw_data <- read.csv("alpine_data.csv")
+raw_data <- read.csv("alpine_data_updated.csv")
 names(raw_data)
 round( summary(raw_data$leaf.area.index),1)
 #Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
@@ -211,5 +287,6 @@ round( summary(raw_data$leaf.area.index),1)
 
 ggplot(raw_data, aes(y = leaf.area.index, x = shrub))+geom_boxplot()
 
+summary (lm(leaf.area.index ~ shrub, data = raw_data))
 
 #Effect of Traits (LAI,AREA,Height) on snow========
