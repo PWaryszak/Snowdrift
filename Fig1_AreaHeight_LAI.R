@@ -1,8 +1,12 @@
 #Trait Table of 6 focus plant (Height, LAI, Area_cm3)======
-#Exclude non-shrubs
+#Load LIBRARIES:
+library(tidyverse)
+library(vegan)
+
+#LOAD DATA:
 snow <- read.csv("VegSnowWindData_MasterFile.csv") #Master Data joined in CombineData.R file - early and late snow was combined in the excel as per email/cat (email title: "Original snow depth and density calculations sheet" )
 
-snow2 <- snow %>% 
+snow2 <- snow %>%  #Exclude non-shrubs
   filter(! shrub =="Open.grassy") %>%  #Exclude grassy areas as these had no aspect accounted for
   filter(! shrub =="Closed.heath")      #Exclude "Closed.heath" areas as these had no aspect accounted for nor veg survey undertaken.
 
