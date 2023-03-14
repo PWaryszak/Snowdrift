@@ -64,20 +64,22 @@ Six_height_cm
 #write.table(Six_height_cm, file = "TRAITsumstats.txt", sep = ",", quote = FALSE, row.names = F)  #Save as table.txt and then copy into Word, 
 #in Word to get a Word-Table, select it all, go to Table → Convert → Convert Text to Tabl3
 
-#Turn Table 1 (Six_height_cm) into Plot===========
+#Turning Table 1 (Six_height_cm) into Plot===========
 names(Six_height_cm)
 
 #Panel Plot of Table 1:
 s1 <- ggplot(Six_height_cm, aes( x =  "", y=mean_height_cm)) +
   geom_point(aes(size = as.numeric(mean_area_cm3), fill=mean_LAI),shape=21, colour = "black")+
-  scale_size(range = c(2,20))+
-  scale_y_continuous(limits = c(0, 80))+
+  geom_errorbar( aes(ymin= mean_height_cm+se_height_cm,
+                     ymax = mean_height_cm-se_height_cm), width=.2, colour = "white")+
+  scale_size(range = c(10,20))+
+  scale_y_continuous(limits = c(1, 80),expand = c(0, 0))+
   scale_fill_gradient(low = "grey", high = "black")+
   facet_grid(.~shrub_genus + shrub_species) +
   
   
   theme_classic()+
-  labs( x = "Target shrub", y = "Average target shrub height (cm)",
+  labs( x = "Target shrub", y = "Mean target shrub height (cm)",
         size = "Area:",  fill = "LAI:")+
   theme(axis.text.x = element_blank(),   #text(size=16,hjust=.5,angle=45,vjust=1,face="italic", color="black"),
         axis.text.y = element_text(size=16, hjust=.5,vjust=0,face="plain", color="black"),  
@@ -87,20 +89,25 @@ s1 <- ggplot(Six_height_cm, aes( x =  "", y=mean_height_cm)) +
         plot.title = element_text(size=20, lineheight=1.8, face="bold", hjust = 0.5),
         legend.title = element_text(size=16, face="bold"),
         legend.text = element_text(size = 8),
-        legend.key = element_rect( fill = "white", color = "black"),
-        legend.box.background = element_rect(),
+        #legend.key = element_rect( fill = "white", color = "black"),
+        legend.key=element_blank(), #Removes the frames around the points in legends
+                legend.box.background = element_rect(),
         legend.box.margin = margin(6, 6, 6, 6),
-        legend.direction="horizontal",
-        legend.box = "horizontal",
+        legend.direction="vertical",
+       
         strip.text=element_text(size=14, face = "italic"),
         strip.background = element_rect(colour="white"),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         panel.border = element_blank(),
-        legend.position = c(0.5 , 0.15)) 
+        
+        axis.line.x.bottom=element_blank(),
+        
+        legend.box = "horizontal",
+        legend.position = c(0.8 , 0.25)) 
 
 s1
-#ggsave(s1, dpi=300, width = 2401, height = 2037, units = "px", filename = "Table1_PlotNew.jpg")
+#ggsave(s1, dpi=300, width = 2401, height = 2037, units = "px", filename = "Table1_PlotNewUpdated1.jpg")
 
 
 
@@ -140,7 +147,7 @@ s2 <-ggplot(Six_height_cm, aes( x =  genus_species, y=mean_height_cm)) +
 round (mean(snow$Richness,na.rm = T) , 1) # 10.8
 round (sd (snow$Richness,na.rm = T), 1) #3.7
 
-#Total Species Table (Full name, frequencies, life forms)========
+#Species List Table S (Full name, frequencies, life forms)========
 #Remove Singletons columns:
 occur.cols <- apply(veg_matrix,2,sum)#sum species occurrences in each column
 zero_species <- as.data.frame(occur.cols) %>% filter(occur.cols == 0) #Check for zero species
@@ -218,61 +225,100 @@ abline(v= 48, col = "red", lty=1, lwd=3)
 
 
 
-#SNOW summaries=====
-names(snow)
+#SNOW days summary (General)=====
+names(snow2)
+#Means first:
+snow3 <- snow2 %>% #After merging early and late snow depth & snow density records were triplicated. Run mean first:
+  group_by(SampleID,aspect) %>%
+  summarise(snow_days_av = mean(snow_days, na.rm=T))
 
-#early_depth_cm
-round( summary(snow$early_depth_cm),1)
-#Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-# 10.0    34.0    43.0    43.4    51.4    90.0      12 
-round(sd(snow$early_depth_cm, na.rm = TRUE),1)# 12.9
-
-
-#By AreaType:
-General_Snow <- snow2 %>%
-  group_by(AreaType) %>%
-  summarize(AV_early_depth_cm = mean(early_depth_cm, na.rm=T),
-            N_early_depth_cm = n(),
-            SD_early_depth_cm = sd(early_depth_cm, na.rm=T),
-            SE_early_depth_cm = SD_early_depth_cm / sqrt(N_early_depth_cm))
-
-General_Snow
-#AreaType AV_early_depth_cm   N_early_depth_cm SD_early_depth_cm SE_early_depth_cm
-#1 grass                 40.2               46              10.5             1.54 
-#2 shrub                 43.3              284              12.9             0.763
+#Overall snow_days:
+round( mean(snow3$snow_days_av, na.rm = TRUE),1) #123.7 was the overall mean snow season length
 
 
-#late_depth_cm
-round( summary(snow$late_depth_cm),1)
-#Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-#0.0    37.2    52.0    51.7    65.8   150.0      62 
-round(sd(snow$late_depth_cm, na.rm = TRUE),1)# 27.1
+#Then Results:
+snow_n <- snow3 %>%
+  group_by(SampleID,aspect) %>%
+  group_by(aspect) %>%
+  summarise( AV = mean(snow_days_av, na.rm=T),
+             SD = sd(snow_days_av, na.rm=T),
+             N= n(),
+             SE = SD/sqrt(48))
 
-#early_density_gcm3
-round( summary(snow$early_density_gcm3),1)
-#Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-# 0.0     0.2     0.3     0.3     0.4     0.7      53 
-round(sd(snow$early_density_gcm3, na.rm = TRUE),1)# 0.1
+snow_n
+#aspect    AV    SD     N    SE
+# NW      122.  15.1   172  2.18
+# SE      125.  13.2   171  1.90
 
-#late_density_gcm3
-round( summary(snow$late_density_gcm3),1)
-#Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-#-0.1     0.4     0.4     0.4     0.5     0.7      90 
-round(sd(snow$late_density_gcm3, na.rm = TRUE),1)# 0.1
+#SNOW density summary (General)=====
+names(snow2)
 
-#snow_days_average
-round( summary(snow$snow_days_average),1)
-#Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-# 42.0   115.9   125.0   123.3   133.0   163.0      63 
-round(sd(snow$snow_days_average, na.rm = TRUE),1)# 14.7
+#Means first:
+snow3 <- snow2 %>% #After merging early and late snow depth & snow density records were triplicated. Run mean first:
+  group_by(SampleID,aspect) %>%
+  summarise(snow_density_av = mean(snow_density_gcm3, na.rm=T))
 
-#snow_days_1_aug_average
-round( summary(snow$snow_days_1_aug_average),1)
-#Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-#29.0    58.0    63.5    64.2    71.2   102.5      63 
-round(sd(snow$snow_days_1_aug_average, na.rm = TRUE),1)# 10.6
+#Overall snow_density:
+round( mean(snow3$snow_density_av, na.rm = TRUE),2) #0.38
 
-#Wind_Max
+#Then Results:
+snow_n <- snow3 %>%
+  group_by(SampleID,aspect) %>%
+  group_by(aspect) %>%
+  summarise( AV = mean(snow_density_av, na.rm=T),
+             SD = sd(snow_density_av, na.rm=T),
+             N= n(),
+             SE = SD/sqrt(48))
+
+snow_n
+
+
+
+
+#SNOW depth summary (General)=====
+names(snow2)
+
+#Means first:
+snow3 <- snow2 %>% #After merging early and late snow depth & snow depth records were triplicated. Run mean first:
+  group_by(SampleID,aspect) %>%
+  summarise(wind_av = mean(snow_depth_cm, na.rm=T))
+
+#Overall snow_depth:
+round( mean(snow3$snow_depth_av, na.rm = TRUE),2) #47.45
+
+#Then Results:
+snow_n <- snow3 %>%
+  group_by(SampleID,aspect) %>%
+  group_by(aspect) %>%
+  summarise( AV = mean(snow_depth_av, na.rm=T),
+             SD = sd(snow_depth_av, na.rm=T),
+             N= n(),
+             SE = SD/sqrt(48))
+
+snow_n
+
+#Wind summary (General)=====
+names(snow2)
+
+#Means first:
+snow3 <- snow2 %>% #After merging early and late snow depth & snow depth records were triplicated. Run mean first:
+  group_by(SampleID,aspect) %>%
+  summarise(wind_av = mean(Wind_Ave, na.rm=T))
+
+#Overall snow_depth:
+round( mean(snow3$wind_av, na.rm = TRUE),2) #47.45
+
+#Then Results:
+snow_n <- snow3 %>%
+  group_by(SampleID,aspect) %>%
+  group_by(aspect) %>%
+  summarise( AV = mean(wind_av, na.rm=T),
+             SD = sd(wind_av, na.rm=T),
+             N= n(),
+             SE = SD/sqrt(48))
+
+snow_n
+
 round( summary(snow$Wind_Max),1)
 #Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
 #  1.3     4.1     5.7     6.6     9.5    17.4     301 
@@ -286,7 +332,5 @@ round( summary(raw_data$leaf.area.index),1)
 #  0.0     3.4     4.5     4.3     5.8     8.7       5 
 
 ggplot(raw_data, aes(y = leaf.area.index, x = shrub))+geom_boxplot()
-
 summary (lm(leaf.area.index ~ shrub, data = raw_data))
 
-#Effect of Traits (LAI,AREA,Height) on snow========
