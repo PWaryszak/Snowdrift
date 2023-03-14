@@ -50,16 +50,16 @@ snow_stats_OG
 
 #PLOT:
 s2 <- ggplot(data = snow_stats_OG, aes(x= snow_depth_cm, y=height_cm, color=Region))+ #, color= AreaType, data=[snow2$AreaType=="shrub",]
-  geom_point(aes(size=Richness),alpha=0.5)+
+  geom_point(aes(size=Richness),alpha=0.7)+
   guides(color = guide_legend(override.aes = list(size = 5)))+
   
-  stat_smooth(method = "lm", col = "firebrick1")+
-  scale_color_manual(values =  c("darkgreen", "blue"))+
+  stat_smooth(method = "lm", col = "black")+
+  scale_color_manual(values =  c("deeppink", "royalblue"))+
   
   facet_grid(.~Aspect_OG)+
   scale_y_continuous(limits = c(0,100))+
   
- labs(x = "Snow depth (cm)",y = "Plant height (cm)", color= "Region: ", size = "Richness: ") + #, color = "Dominant Life Form: "
+ labs(x = "Snow depth (cm)",y = "Target shrub height (cm)", color= "Region: ", size = "Richness: ") + #, color = "Dominant Life Form: "
   theme_bw()+
   
   theme(axis.text.x = element_text(size = 12, color = "black"),
@@ -70,7 +70,7 @@ s2 <- ggplot(data = snow_stats_OG, aes(x= snow_depth_cm, y=height_cm, color=Regi
         legend.text = element_text(size = 10),
         legend.title = element_text(face = "bold", size=12),
         legend.key = element_rect( fill = "white", color = "black", linetype=2),
-        legend.box.background = element_rect(size=2, colour = "#FFCC66"),
+        legend.box.background = element_rect(size=2, colour = "white"),
         legend.box.margin = margin(6, 6, 6, 6),
         strip.text=element_text(size=16, face = "bold"),
         strip.background = element_rect("white"),
@@ -81,7 +81,7 @@ s2 <- ggplot(data = snow_stats_OG, aes(x= snow_depth_cm, y=height_cm, color=Regi
 
 s2
 
-#ggsave(s2, width = 10, height = 8, filename = "FIG2_SmallLegend.jpg")
+ggsave(s2, width = 10, height = 8, filename = "FIG2_SmallLegend_DeepPink.jpg")
 
 #ggsave(s2, dpi=300, width = 1961, height = 1307, units = "px", filename = "FIG2_SmallLegend.jpg")
 #ggsave(s2, dpi=300, width = 1961, height = 1307, units = "px", device = "pdf", filename = "FIG2.pdf")
@@ -97,3 +97,80 @@ summary(lm(Richness ~ Aspect_OG, data = snow_stats_OG))
 #Width: 945 (single column), 1476 (1.5 column) or 1961 (double column) pixels (at 300 dpi). Resolution: 300-600 dpi. Size: <50MB
 #For fonts in the figures use only common sans-serif fonts, such  as Geneva, Helvetica, or Arial. Letters, numbers and symbols must appear clearly but not oversized.
 
+
+#PLOT Bueaty:
+s3 <- ggplot(data = snow_stats_OG, aes(x= snow_depth_cm, y=height_cm, color=Region))+ #, color= AreaType, data=[snow2$AreaType=="shrub",]
+  geom_point(aes(size=Richness),alpha=0.7)+
+  guides(color = guide_legend(override.aes = list(size = 5)))+
+  
+  stat_smooth(method = "lm", col = "black")+
+  scale_color_manual(values =  c("deeppink", "royalblue"))+
+  
+  facet_grid(.~Aspect_OG)+
+  scale_y_continuous(limits = c(0,100))+
+  
+  labs(x = "Snow depth (cm)",y = "Target shrub height (cm)", color= "Region: ", size = "Richness: ") + #, color = "Dominant Life Form: "
+  theme_bw()+
+  
+  theme(axis.text.x = element_text(size = 16, color = "black"),
+        axis.text.y = element_text(size=16, hjust=.5,vjust=0,face="plain", color="black"),
+        axis.title.y = element_text(size = 22),
+        axis.title.x = element_text(size = 22),
+        legend.position = c(.15,.75),              #c(0.2, 0.5)
+        legend.title = element_text( size=16, face = "bold"),
+        legend.text = element_text(size = 10),
+        legend.key = element_rect( fill = "white", color = "black", linetype=2),
+        legend.box.background = element_rect(size=2, colour = "white"),
+        legend.box.margin = margin(6, 6, 6, 6),
+        strip.text=element_text(size=16, face = "bold"),
+        strip.background = element_rect("white"),
+        panel.grid.minor = element_blank(),
+        panel.spacing = unit(1, "lines"),
+        
+        panel.grid.major = element_blank())
+
+s3
+  
+ggsave(s3, dpi=300, width = 2491, height = 2037, units = "px", filename = "FIG2_SmallLegend_DeepPink2.jpg")
+
+s4 <- ggplot(data = snow_stats_OG, aes(x= snow_depth_cm, y=height_cm))+ #, color= AreaType, data=[snow2$AreaType=="shrub",]
+  geom_point(aes(fill=Richness, shape=Region),size=3, alpha=0.7)+
+ # guides(color = guide_legend(override.aes = list(size = 5)))+
+  
+  stat_smooth(method = "lm", col = "black")+
+  scale_shape_manual(values=c(21,22))+
+  scale_fill_gradient(low = "deeppink", high = "royalblue")+
+  
+  
+  #scale_color_manual(values =  c("deeppink", "royalblue"))+
+  
+  facet_grid(.~Aspect_OG)+
+  scale_y_continuous(limits = c(0,100))+
+  
+  labs(x = "Snow depth (cm)",y = "Target shrub height (cm)", color= "Region: ", size = "Richness: ") + #, color = "Dominant Life Form: "
+  theme_bw()+
+  
+  theme(axis.text.x = element_text(size = 16, color = "black"),
+        axis.text.y = element_text(size=16, hjust=.5,vjust=0,face="plain", color="black"),
+        axis.title.y = element_text(size = 22),
+        axis.title.x = element_text(size = 22),
+        
+        legend.position = c(.15,.65),              #c(0.2, 0.5)
+        legend.title = element_text( size=16, face = "bold"),
+        legend.text = element_text(size = 10),
+        #legend.key = element_rect( fill = "white", color = "black", linetype=2),
+        legend.key=element_blank(), #Removes the frames around the points in legends
+        legend.box.background = element_rect(size=2, colour = "white"),
+        legend.box.margin = margin(6, 6, 6, 6),
+        
+        strip.text=element_text(size=16, face = "bold"),
+        strip.background = element_rect("white"),
+        panel.grid.minor = element_blank(),
+        panel.spacing = unit(1, "lines"),
+        
+        panel.grid.major = element_blank())
+
+s4
+
+ggsave(s4, dpi=300, width = 2491, height = 2037, 
+       units = "px", filename = "FIG2_SmallLegend_Shapes.jpg")
