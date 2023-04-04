@@ -2,7 +2,6 @@
 library("readxl")
 library("tidyverse")
 library("vegan")#WEB on NMDS: https://jonlefcheck.net/2012/10/24/nmds-tutorial-in-r/
-library("plotly")#WEB: https://towardsdatascience.com/make-beautiful-3d-plots-in-r-an-enhancement-on-the-story-telling-613ddd11e98
 library(ggfortify)
 
 setwd("C:/Users/poles/Documents/00Deakin_Docs/R/SusannaVenn/SEM/Shrub-snowdrift/Structural Equation Model/Emily/shrubs snowdrift/Snowdrift_SEM")
@@ -20,8 +19,7 @@ veg_matrix <- pre_veg_matrix %>%
   filter(SpecRowSums > 0) %>%  #removing 0-rows of species (singletons)
   select(SampleID2, Acae_nova:Xero_subu )
 
-names(veg_matrix) #Check names 109 species
-dim(veg_matrix)#242 110 = 242 plots with total of 109 species columns + SampleID2 columns
+dim(veg_matrix)#242 110 = 242 plots with total of 110 species columns + SampleID2 columns
 
 
 #CLEAN VEG data========
@@ -37,7 +35,7 @@ table(occur.cols) #no zero abundance
 good.matrix <- community_matrix [ , ! occur.cols <= 0  ] #removing all 0-sum  columns
 dim(good.matrix) #242 109
 RowSum<-rowSums(good.matrix)
-range(RowSum)#24.5 191.5 = ALL GOOD!
+range(RowSum)#24.5 191.5 = ALL GOOD! No Zeros!
 names(good.matrix)
 
 #Triple Check:
@@ -55,16 +53,13 @@ old_env <- as.data.frame(veg_matrix %>%
   unite("SampleID", c("region", "site", "shrub_code", "aspect"), sep="_", remove = F) #unite again to match with plant height data from snow_stats (LMER_OG)
 
 
-
-
 #TRAIT DATA:=====
 #MErge height variables to old_env to run RDA on it (Find snow_stats in LMER_OG Rfile):
-#After merging early and late snow and density (we updated alpine_data to alpine_data_updated.csv)
 #lots of SampleID plots are triplicated hence average the terms before stats:
 #Load snow prepared and cured in CombineData.R file:
 setwd("C:/Users/poles/Documents/00Deakin_Docs/R/SusannaVenn/SEM/Shrub-snowdrift/Structural Equation Model/Emily/shrubs snowdrift/Snowdrift")
 snow <- read.csv(file = "VegSnowWindData_MasterFile.csv") #Master Data joined in CombineData.R file - early and late snow was combined in the excel as per email/cat (email title: "Original snow depth and density calculations sheet" )
-dim(snow)#3040  162
+dim(snow)#3040  166
 
 #Clean the snow data:
 snow2 <- snow %>% 
@@ -75,6 +70,9 @@ snow2 <- snow %>%
   mutate( AreaType = ifelse(shrub_genus == "Open", "grass", "shrub"))  %>% #All OG (Open Grass) plots have height below 1 cm.
   filter( ! is.na(AreaType) )    #4 NA-s got filtered out 
 
+
+#Removing duplicate records by using mean function
+##After merging early and late snow and density (we updated alpine_data to alpine_data_updated.csv)
 snow_stats <- snow2 %>%
   filter(shrub_genus !=  "Closed" ) %>% #Remove  "Closed" heath (CH) No data there. 
   mutate(SampleID = as.factor(SampleID)) %>%
@@ -103,153 +101,12 @@ env <-left_join(old_env, plant_traits, by = "SampleID")
 env$AreaType <- ifelse(grepl('OG', env$shrub_code), 'Grass', 'Shrub') #Rename OG to Grass (OG = Open Grassy)
 veg.env<-cbind(good.matrix,env)
 names(veg.env)
+
 unique(env$shrub2)#"Nematolepis ovatifolia", "Orites lanceolata","Epacris petrophylla" ,"Grevillea australis","Hovea montana" "Open grassy"   ,  "Ozothamnus alpina"   
 names(env)#"region", "site","shrub_code" "aspect", "shrub",  "shrub2" ,"AreaType"  
 
 
-#RDA on region=======
-BRAYalpine <- vegdist(good.matrix, distance = "bray")#compute dissimilarity indices between comm-s
-df.response <- decostand( BRAYalpine, method = 'hellinger' )#standardization method  for community data frame (df)
-
-#Run RDA model:
-region_rda_model<- rda(df.response ~ region, env, tidy =T)
-#Plot simple:
-plot(region_rda_model, choices=c(1,2), display= c('bp','sites'), scaling=1) #c('bp','sites')
-plot(region_rda_model)
-coef(region_rda_model)#regionKNP -0.1366486
-
-summary(region_rda_model)
-anova(region_rda_model,by = "margin", first = TRUE)
-
-R2 <- RsquareAdj(region_rda_model)$adj.r.squared
-round (R2,2) # 0.23
-
-#RDA on aspect=======
-BRAYalpine <- vegdist(good.matrix, distance = "bray")#compute dissimilarity indices between comm-s
-df.response <- decostand( BRAYalpine, method = 'hellinger' )#standardization method  for community data
-
-aspect_rda_model<- rda(df.response ~ aspect, env, tidy =T)
-
-plot(aspect_rda_model, choices=c(1,2), display= c('bp','sites'), scaling=1) #c('bp','sites')
-anova(aspect_rda_model,by = "margin")
-##Model: rda(formula = df.response ~ aspect, data = env, tidy = T)
-#Df  Variance      F             Pr(>F)
-#aspect     1 0.0000133 0.1333  0.999
-
-R2 <- RsquareAdj(aspect_rda_model)$adj.r.squared
-round (R2,2) # 0! No Effect!
-
-
-#RDA on AreaType=======
-BRAYalpine <- vegdist(good.matrix, distance = "bray")#compute dissimilarity indices between comm-s
-df.response <- decostand( BRAYalpine, method = 'hellinger' )#standardization method  for community data
-
-AreaType_rda_model<- rda(df.response ~ AreaType, env, tidy =T)
-
-plot(AreaType_rda_model, choices=c(1,2), display= c('bp','sites'), scaling=1) #c('bp','sites')
-summary(AreaType_rda_model)
-
-anova(AreaType_rda_model,by = "margin")
-##Model: rda(formula = df.response ~ AreaType, data = env, tidy = T)
-#Df  Variance      F             Pr(>F)
-#AreaType   1 0.002075 22.678  0.001 ***
-#Residual 240 0.021960            
-
-R2 <- RsquareAdj(AreaType_rda_model)$adj.r.squared
-round (R2,2) # 0.08
-
-RDA1_varex<-round(summary(AreaType_rda_model)$cont$importance[2,1]*100,1) #Get percentage of variance explained by first axis
-RDA1_varex #8.6
-
-#RDA on plant height_cm=======
-BRAYalpine <- vegdist(good.matrix, distance = "bray")#compute dissimilarity indices between comm-s
-df.response <- decostand( BRAYalpine, method = 'hellinger' )#standardization method  for community data frame (df)
-
-
-#Run RDA model:
-height_cm_rda_model<- rda(df.response ~ height_cm, env, tidy =T,  na.action = na.omit) #na.action = na.omit handles zeros that rda does not accept
-#Plot simple:
-plot(height_cm_rda_model, choices=c(1,2), display= c('bp','sites'), scaling=1) #c('bp','sites')
-plot(height_cm_rda_model)
-coef(height_cm_rda_model)#height_cmKNP -0.1366486
-
-summary(height_cm_rda_model)
-anova(height_cm_rda_model,by = "margin", first = TRUE)
-
-R2 <- RsquareAdj(height_cm_rda_model)$adj.r.squared
-round (R2,2) # 0.03
-
-RDA1_varex<-round(summary(height_cm_rda_model)$cont$importance[2,1]*100,1) #Get percentage of variance explained by first axis
-RDA1_varex #3.9
-
-#Multi-Model RDA (Shrub, aspect, region) ==========
-
-#Same as above but only one shrub column (Same results of anova)
-#Vegetation distance matrix construction [Cover Values]:
-BRAYalpine <- vegdist(good.matrix, distance = "bray")#compute dissimilarity indices between comm-s
-df.response <- decostand( BRAYalpine, method = 'hellinger' )#standardization method  for community data
-multi_alpine_rda <- rda(df.response ~ shrub+region, env)
-summary(multi_alpine_rda)
-
-#PLOT multi_alpine_rda
-plot(multi_alpine_rda, display = c("sites", "bp"), scaling=2)
-screeplot(multi_alpine_rda)
-
-ggord(multi_alpine_rda ,env$shrub) + 
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-
-
-
-anova.cca(multi_alpine_rda, by = "margin", first =FALSE)
-anova.cca(multi_alpine_rda, by = "axis")
-#Model: rda(formula = df.response ~ shrub + region, data = env)
-#Df  Variance       F Pr(>F)    
-#RDA1       1 0.0060090 86.4963  0.001 ***
-#RDA2       1 0.0014252 20.5145  0.001 ***
-
-R2 <- RsquareAdj(multi_alpine_rda)$adj.r.squared
-round (R2,2) # 0.3
-
-#RDA on 6 target shrubs============
-env2 <- env %>%          #Throw shrub levels into columns to fit rda data format where 1=present, 0=absent
-  select(shrub) %>%
-  mutate(Grevillea.australis =  ifelse(grepl('Grevillea.australis', env$shrub), 1, 0)) %>%
-  mutate(Hovea.montana =  ifelse(grepl('Hovea.montana', env$shrub), 1,0)) %>%
-  mutate(Orites.lanceolata =  ifelse(grepl('Orites.lanceolata', env$shrub), 1,0)) %>%
-  mutate(Ozothamnus.alpina =  ifelse(grepl('Ozothamnus.alpina', env$shrub), 1,0)) %>%
-  mutate(Nematolepis.ovatifolia =  ifelse(grepl('Nematolepis.ovatifolia', env$shrub), 1,0)) %>%
-  mutate(Epacris.petrophylla =  ifelse(grepl('Epacris.petrophylla', env$shrub), 1,0)) %>%
-  mutate(Open.grassy =  ifelse(grepl('Open.grassy', env$shrub), 1,0)) %>%
-  select(-shrub)
-
-
-#RDA:
-BRAYalpine <- vegdist(good.matrix, distance = "bray")#compute dissimilarity indices between comm-s
-df.response <- decostand( BRAYalpine, method = 'hellinger' )#standardization method  for community data
-
-rda_model<- rda(df.response ~ ., env2, tidy =T)
-
-plot(rda_model, choices=c(1,2), display= c('bp','sites'), scaling=1) #c('bp','sites')
-
-ggord(rda_model, env2$shrub) + 
-  scale_y_continuous(limits = c(-1, 1))+
-  scale_x_continuous(limits = c(-1,1))+
-  
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-
-summary(rda_model)
-anova(rda_model,by = "margin")
-#Number of permutations: 999
-#Model: rda(formula = df.response ~ Grevillea.australis + Hovea.montana + Orites.lanceolata + Ozothamnus.alpina + Nematolepis.ovatifolia + Open.grassy, data = env2)
-#           Df  Variance      F Pr(>F)    
-#Model      6 0.0077091 18.495  0.001 ***
-# Residual 235 0.0163256   
-
-R2 <- RsquareAdj(rda_model)$adj.r.squared
-round (R2,2) # 0.3
-
-
-#PLOT RDA on 6 target shrubs + open grassy============
+#Plot RDA on 6 target shrubs + open grassy============
 #Good Code: https://programmer.ink/think/r-redundancy-analysis-rda-ggplot2.html
 # Enable the r-universe repository. RUN ONCE:
 options(repos = c(  fawda123 = 'https://fawda123.r-universe.dev',  CRAN = 'https://cloud.r-project.org'))
@@ -285,11 +142,6 @@ anova.cca(alpine_rda, by = "margin")
 R2 <- RsquareAdj(alpine_rda)$adj.r.squared
 round (R2,2) # 0.3
 
-RDA1_alpine <- round(100 * RsquareAdj(alpine_rda)$adj.r.squared * summary(alpine_rda)$concont$importance[2,1], digits = 1)
-RDA1_alpine  #23.6
-RDA2_alpine <- round(100 * RsquareAdj(alpine_rda)$adj.r.squared * summary(alpine_rda)$concont$importance[3,2], digits = 1)
-RDA2_alpine  #29.3
-
 #Variance % explained:
 RDA1_varex<-round(summary(alpine_rda)$cont$importance[2,1]*100,1) #Get percentage of variance explained by first axis
 RDA1_varex #25
@@ -324,6 +176,8 @@ alpinePlot <- ggplot(data=df.sites, aes(x=RDA1, y=RDA2 )) +  # , color= Region
   
   #scale_color_manual(values =  c("red","green", "blue"))+
   #scale_x_continuous(limits = c(-0.3,0.6))+
+  #ggtitle("Alpine Plant Communities (Australia)")
+  
   
   xlab(paste0(as.character(RDA1_varex) ,' % of variation (RDA1)')) + 
   ylab(paste0(as.character(RDA2_varex) ,' % of variation (RDA2)')) +
@@ -357,8 +211,6 @@ alpinePlot <- ggplot(data=df.sites, aes(x=RDA1, y=RDA2 )) +  # , color= Region
         strip.text=element_text(size=14),
         legend.position = c(0.1,0.85)) 
 
-#ggtitle("Alpine Plant Communities (Australia)")
 
 alpinePlot     
-
 #ggsave(alpinePlot, width = 12, height = 7, file = "AlpineRDA_GOOD03.png")
