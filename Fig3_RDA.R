@@ -171,7 +171,7 @@ df.env$var <- factor(df.env$var,levels=c("shrubEpacris.petrophylla","shrubNemato
 unique(df.env$var )
 
 alpinePlot <- ggplot(data=df.sites, aes(x=RDA1, y=RDA2 )) +  # , color= Region
-  geom_point(size=4,aes(shape=Region),alpha=0.4) +
+  geom_point(size=4,aes(shape=Region)) +   #blur edges with alpha=0.4
   scale_shape_manual(values=c(22,24))+
   
   #scale_color_manual(values =  c("red","green", "blue"))+
@@ -213,4 +213,4 @@ alpinePlot <- ggplot(data=df.sites, aes(x=RDA1, y=RDA2 )) +  # , color= Region
 
 
 alpinePlot     
-#ggsave(alpinePlot, width = 12, height = 7, file = "AlpineRDA_GOOD03.png")
+ggsave(alpinePlot, width = 12, height = 7, file = "AlpineRDA_GOOD03_SharpEdges.png")
