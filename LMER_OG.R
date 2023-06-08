@@ -44,43 +44,6 @@ summary(lm(snow_days ~ AreaType, data = snow2)) #Yes
 #(Intercept)    112.176      2.788  40.242  < 2e-16 ***
 #AreaTypeshrub   12.780      2.836   4.507 7.34e-06 ***
 
-
-#Wind model:=========
-#After merging early and late snow depth & snow density records often duplicated. Run AV first:
-snow3 <- snow2 %>%
-  group_by(SampleID,aspect) %>%
-  summarise(Wind_Ave_ms = mean(Wind_Ave, na.rm=T),
-            Wind_Max_ms = mean(Wind_Max, na.rm=T))
-
-Wind_model<-lm(Wind_Ave_ms ~  aspect  , data=snow3)
-tab_model(Wind_model)
-
-Wind_max_model<-lm(Wind_Max_ms ~  aspect, data=snow3)
-tab_model(Wind_model, Wind_max_model, show.stat=T, show.se=T, show.ci = F) #Table S2 n the Manuscript, output of snow3 = output of snow2 YAY!
-
-#AREA_cm3 =======
-summary(lm(area_cm3 ~ AreaType + aspect*height_cm, data = snow_stats)) #YES but there are reports on faulty area data
-#                  Estimate Std. Error t value Pr(>|t|)    
-#Intercept)   -5.127e-11  5.029e+03    0.00        1    
-#AreaTypeshrub  3.806e+04  5.421e+03    7.02 1.28e-11 ***
-
-#LAI (Ignore, set to 0 for grasses)=======
-summary(lmer(LAI ~ AreaType + aspect* height_cm + (1|Region) , data = snow_stats)) #YES but there are reports on faulty area data
-#                     Estimate Std. Error t value Pr(>|t|)    
-#(Intercept)        -4.002e-14  2.464e-01   0.000  1.00000    
-#AreaTypeshrub       5.668e+00  2.902e-01  19.535  < 2e-16 ***
-#aspectSE            1.327e-15  2.897e-01   0.000  1.00000    
-#height_cm          -1.640e-02  5.203e-03  -3.152  0.00177 ** 
-#aspectSE:height_cm  5.290e-17  6.194e-03   0.000  1.00000    
-
-
-
-------------------------------------------------------------------------------
-
-
-
-#LMER 4 RESULTS (snow_depth Table S3)========
-#snow_depth_cm_model (Table S3 in Manuscript):============
 #After merging early and late snow and density (we updated alpine_data to alpine_data_updated.csv)
 #lots of SampleID plots are triplicated hence average the terms before stats:
 
@@ -104,6 +67,58 @@ snow_stats <- snow2 %>%
             area_cm3 = mean(area_cm3, na.rm=T),
             N=n())
 snow_stats
+unique(snow_stats$AreaType)# "shrub" "grass"
+
+
+#Wind model:=========
+#After merging early and late snow depth & snow density records were triplicated. Run AV first:
+snow3 <- snow2 %>%
+  group_by(SampleID,aspect) %>%
+  summarise(Wind_Ave_ms = mean(Wind_Ave, na.rm=T),
+            Wind_Max_ms = mean(Wind_Max, na.rm=T))
+
+Wind_model<-lm(Wind_Ave_ms ~  aspect  , data=snow3)
+tab_model(Wind_model)
+
+Wind_max_model<-lm(Wind_Max_ms ~  aspect, data=snow3)
+tab_model(Wind_model, Wind_max_model, show.stat=T, show.se=T, show.ci = F) #Table S2 n the Manuscript, output of snow3 = output of snow2 YAY!
+
+#AREA_cm3 =======
+#ellipse is 0.79 of square surface hence = area_cm3*0.79 (it is area_cm2 in real terms)
+#area_cm3 was not measured for grasses!aArea_cm3 measured entire target shrub (no split between aspects!)
+
+summary(lm(area_cm3*0.79 ~ height_cm, data = snow_stats[snow_stats$AreaType=="shrub",])) #YES but there are reports on faulty area data
+#                  Estimate Std. Error t value Pr(>|t|)    
+#Intercept)   -5.127e-11  5.029e+03    0.00        1    
+#AreaTypeshrub  3.806e+04  5.421e+03    7.02 1.28e-11 ***
+
+summary(lmer(area_cm3*0.79 ~ aspect* height_cm + (1|Region) , data = snow_stats)) #YES but there are reports on faulty area data
+
+
+#LAI (Ignore, set to 0 for grasses)=======
+summary(lmer(LAI ~ AreaType + aspect* height_cm + (1|Region), data = snow_stats)) #YES but there are reports on faulty area data
+#                     Estimate Std. Error t value Pr(>|t|)    
+#(Intercept)        -4.002e-14  2.464e-01   0.000  1.00000    
+#AreaTypeshrub       5.668e+00  2.902e-01  19.535  < 2e-16 ***
+#aspectSE            1.327e-15  2.897e-01   0.000  1.00000    
+#height_cm          -1.640e-02  5.203e-03  -3.152  0.00177 ** 
+#aspectSE:height_cm  5.290e-17  6.194e-03   0.000  1.00000    
+
+#LAI ~HEIGHT=======
+summary( lm(LAI ~ height_cm, data=snow_stats)) #All when Grass set to 0
+#Estimate Std. Error t value Pr(>|t|)    
+#(Intercept) 2.675289   0.212957  12.563  < 2e-16 ***
+#height_cm   0.038441   0.004553   8.442 1.04e-15 ***
+
+summary( lm(LAI ~ height_cm, data=snow_stats[snow_stats$AreaType =="shrub",])) #Shrubs Only
+#(Intercept)  5.66826    0.22646  25.030  < 2e-16 ***
+# height_cm   -0.01640    0.00449  -3.653 0.000309 ***
+
+------------------------------------------------------------------------------
+
+
+
+#LMER 4 RESULTS (snow_depth Table S3)========
 summary( lmer(snow_depth_cm ~ AreaType + aspect * height_cm + (1|Region), data=snow_stats))
 #                  Estimate    Std. Error  df     t value  Pr(>|t|)    
 #(Intercept)         46.07079    8.01706   1.28963   5.747  0.07122 . 
@@ -114,6 +129,8 @@ summary( lmer(snow_depth_cm ~ AreaType + aspect * height_cm + (1|Region), data=s
   
 model_snow_depth_cm <- lmer(snow_depth_cm ~ AreaType + aspect * height_cm + (1|Region), data=snow_stats)
 tab_model(model_snow_depth_cm, show.stat = T, digits=1, show.se = T )
+
+
 
 #extract slopes:
 coef(summary(model_snow_depth_cm))
@@ -134,6 +151,7 @@ round(fixef( lmer(snow_depth_cm ~ AreaType + height_cm + (1|Region), data=snowSE
 round(fixef( lmer(snow_depth_cm ~ AreaType + height_cm + (1|Region), data=snowNW)),2)
 #(Intercept) AreaTypeshrub     height_cm 
 #40.22348485   -4.45124901    0.08956889 
+
 
 
 
@@ -187,6 +205,8 @@ ggplot(data = snow2, aes(x= snow_days, y=height_cm, fill = aspect ))+
 
 #Richness_model============
 Richness_model <- lmer(Richness ~ AreaType + aspect * height_cm + (1|Region), data = snow_stats)
+Richness_model <- lmer(Richness ~ AreaType + aspect * height_cm + (1|Region), data = snow2)
+
 tab_model(Richness_model) # YES EFFECT!
 #            Estimate Std. Error  df t value Pr(>|t|)    
 #(Intercept)     9.03990    2.10270   1.31611   4.299 0.099156 .  
@@ -194,10 +214,14 @@ tab_model(Richness_model) # YES EFFECT!
 #aspectSE        0.97479    0.40605 215.31042   2.401 0.017217 *  
 #height_cm       0.04782    0.01228  33.84179   3.894 0.000441 ***
 
-
 #Diagnostics:
 qqnorm(resid(Richness_model)) #GOOD
 qqline(resid(Richness_model))
+
+#Key findings:
+summary(lm(Richness ~ AreaType, data = snow_stats))
+summary(lm(Richness ~ height_cm, data = snow_stats))
+
 
 #Plot significant effects (Richness):
 ggplot(data = snow2, aes(x= aspect, y=Richness, fill = height_cm))+
@@ -216,6 +240,26 @@ ggplot(data = snow2, aes(x= aspect, y=Richness, fill = height_cm))+
         strip.text=element_text(size=16),
         plot.title = element_text(size = 17, face = "bold", vjust = 0.5))
 
+#Cover_model============
+#Simplified lmer 4 Key Findings
+#open grassy datasets has no aspect nor height data in them:
+Cover_model_simple <- lmer(Cover ~ AreaType +(1|Region), data = snow_stats)
+Cover_model_simple <- lmer(Cover ~ AreaType +(1|Region), data = snow2) 
+
+summary(Cover_model_simple)#YES effect
+#Estimate Std. Error      df t value Pr(>|t|)    
+#(Intercept)    103.006      5.257 240.000  19.595  < 2e-16 ***
+#AreaTypeshrub   14.677      5.513 240.000   2.662  0.00829 ** 
+
+Cover_model<- lmer(Cover ~ AreaType+ aspect * height_cm +(1|Region), data = snow_stats)
+
+#un-averaged data (snow2) shows clearer relationships between thee variables. Not sure why?:
+Cover_model<- lmer(Cover ~ AreaType+ aspect * height_cm +(1|Region), data = snow2)
+
+#Table S5 in Manuscript:
+tab_model(Richness_model, Cover_model, show.stat=T, show.se=T, show.ci = F )
+
+
 
 #Diversity_model============
 Diversity_model <- lmer(Diversity ~ AreaType + aspect * height_cm + (1|Region), data = snow_stats)
@@ -227,22 +271,7 @@ cor.test(snow2$Richness, snow2$Diversity,method = "pearson") #STRONG CORRELATION
 #0.6355397 , t = 31.785, df = 1491, p-value < 2.2e-16
 
 
-#Cover_model============
-#Simplified lmer 4 Key Findings:
-Cover_model_simple <- lmer(Cover ~ AreaType +(1|Region), data = snow_stats)
-summary(Cover_model_simple)#YES effect
-summary( lm(Cover ~ AreaType , data = snow_stats))
-
-Cover_model<- lmer(Cover ~ AreaType+ aspect * height_cm +(1|Region), data = snow_stats)
-summary(Cover_model)#No Effect
-
-
-#Table S5 in Manuscript:
-
-tab_model(Richness_model, Cover_model, show.stat=T, show.se=T, show.ci = F )
-
-
-#bare_model============
+x#bare_model============
 bare_model <- lmer(Bare ~ AreaType  + aspect * height_cm + (1|Region), data = snow_stats)
 summary(bare_model)#No effect
 
@@ -256,6 +285,7 @@ summary(litt_model)
 #  aspectSE            0.38970    0.96174 1424.11254   0.405  0.68539    
 #height_cm            -0.11783    0.02282  628.83861  -5.163 3.26e-07 ***
 # aspectSE:height_cm   0.01466    0.02029 1424.04740   0.723  0.46997  
+tab_model(litt_model)
 
 #For Key findings:
 summary(lm(Litter ~ AreaType, data = snow_stats))
@@ -265,6 +295,12 @@ ggplot(data = snow2, aes(x= aspect, y=Litter))+
   geom_boxplot() + #geom_jitter(aes(color = aspect)) +
   facet_wrap(.~AreaType)
   
+#Having grasses set to zero height_cm affects the effect size wbove. Reove Grasses before lm:
+summary(lm(Litter ~ height_cm, data = snow_stats[snow_stats$AreaType == "shrub",]))
+##Estimate Std. Error t value Pr(>|t|)    
+#(Intercept) 15.98946    1.72023   9.295  < 2e-16 ***
+#height_cm   -0.10652    0.03412  -3.122  0.00205 ** 
+
 
 #rock_model============
 rock_model <- lmer(Rock ~ AreaType + aspect * height_cm + (1|shrub_code), data = snow2)
@@ -277,7 +313,7 @@ plot_model(rock_model, type = "pred", terms = c("aspect", "HeightRank_")) +
 
 #LIFE FORM MODEL:=======
 #snow_depth_cm_model============
-summary( lmer(snow_depth_cm ~ aspect + height_cm +(1|Region)+(1|shrub_code), data=snow2))
+summary( lmer(snow_depth_cm ~ aspect * height_cm  +(1|Region), data=snow_stats))
 #Estimate Std. Error        df t value Pr(>|t|)    
 #(Intercept)  35.21301    1.88090  56.91796  18.721  < 2e-16 ***
 #  aspectSE      5.42486    1.21549 324.82225   4.463 1.12e-05 ***
