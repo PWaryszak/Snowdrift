@@ -4,7 +4,6 @@ library(broom)
 library(ggpmisc)
 
 #Load snow prepared and cured in CombineData_updated.R file:
-setwd("C:/Users/poles/Documents/00Deakin_Docs/R/SusannaVenn/SEM/Shrub-snowdrift/Structural Equation Model/Emily/shrubs snowdrift/Snowdrift")
 snow <- read.csv(file = "VegSnowWindData_MasterFile.csv")
 
 #Create and Clean AreaType:
@@ -14,20 +13,24 @@ snow2 <- snow %>%
   #Identify and remove Closed Heath (CH) No data there:  
   filter(shrub_genus !=  "Closed" ) %>% #Remove  "Closed" heath (CH) No data there. 
   
-  mutate( AreaType = ifelse(shrub_genus == "Open", "grass", "shrub"))  %>% #All OG (Open Grass) plots have height below 1 cm.
-  
   filter( ! is.na(AreaType) ) %>%    #4 NA-s got filtered out 
-  mutate(Aspect_OG = ifelse(AreaType == "grass", "Grass", aspect)) #(OG has no aspects. Shrubs have NW and SE aspects
+  
+  mutate( AreaType = ifelse(shrub_genus == "Open", "grass", "shrub"))  %>%  #All OG (Open Grass) plots have height below 1 cm.
 
+  mutate(aspect2 = ifelse(aspect == "NW", "Windward", "Leeward")) %>%  #Renaming. Moving away from always describing SE and NW: so the reader / reviewer doesn’t have to remember which way the wind is coming from
+  #NW in the heading to Windward and SE to Leeward
+
+  mutate(Aspect_OG = ifelse(AreaType == "grass", "Grass", aspect2)) #(OG has no aspects. Shrubs have NW and SE aspects
+  
 
 #After merging early and late snow and density into just snow depth and density (for alpine_data_updated.csv)
-#lots of SampleID plots are triplicated hence average the terms before stats:
+#SampleID plots were triplicated after merging columns together hence average the terms before stats:
 snow_stats_OG <- snow2 %>%
   filter(shrub_genus !=  "Closed" ) %>% #Remove  "Closed" heath (CH) No data there. 
 
   mutate(SampleID = as.factor(SampleID)) %>%
   
-  group_by(SampleID,Aspect_OG,aspect,Region) %>%
+  group_by(SampleID,Aspect_OG, aspect2,Region) %>%
   
   summarise(snow_depth_cm =  mean(snow_depth_cm, na.rm=T),
             height_cm = mean (height_cm, na.rm=T),
@@ -41,21 +44,16 @@ snow_stats_OG <- snow2 %>%
 
 snow_stats_OG
 
-snow_stats_OG2 <- na.omit(snow_stats_OG) #Remove NaNs as these give us grey points
-unique(snow_stats_OG2$Richness)
+snow_stats_OG2 <- na.omit(snow_stats_OG) #Remove NaNs as these give us grey points on the plot we do not want to see
 
 
-#PLOT:
+#PLOT Snow Depth and Shrub Height:
 Fig2 <- ggplot(data = snow_stats_OG2, aes(x= snow_depth_cm, y=height_cm))+ #, color= AreaType, data=[snow2$AreaType=="shrub",]
-         geom_point(aes(fill=Richness), size=4, pch=21, alpha=0.9) +   #, shape=Region
+         geom_point(aes(fill=Richness), size=4, pch=21, alpha=1) +   #, shape=Region, was alpha = 0.9 but makes it too blurry
 
   stat_smooth(method = "lm", col = "black")+
   
-  #scale_shape_manual(values=c(21,21))+
-  #guides(color = guide_legend(override.aes = list(size = 5)))+
-  #scale_color_manual(values =  c("deeppink", "royalblue"))+
   scale_fill_gradient(low = "deeppink", high = "royalblue")+
-  
   
   facet_grid(.~Aspect_OG)+
   scale_y_continuous(limits = c(0,100))+
@@ -71,7 +69,7 @@ Fig2 <- ggplot(data = snow_stats_OG2, aes(x= snow_depth_cm, y=height_cm))+ #, co
         legend.position = c(.15,.65),              #c(0.2, 0.5)
         legend.title = element_text( size=16, face = "bold"),
         legend.text = element_text(size = 12),
-        #legend.key = element_rect( fill = "white", color = "black", linetype=2),
+        legend.key = element_rect( fill = "white", color = "black", linetype=2),
         legend.key=element_blank(), #Removes the frames around the points in legends
         legend.box.background = element_rect(size=2, colour = "white"),
         legend.box.margin = margin(6, 6, 6, 6),
@@ -85,5 +83,4 @@ Fig2 <- ggplot(data = snow_stats_OG2, aes(x= snow_depth_cm, y=height_cm))+ #, co
 
 Fig2
 
-ggsave(Fig2, dpi=300, width = 2491, height = 2037, 
-       units = "px", filename = "FIG2_SmallLegend_ShapesPINK_NoGrey.jpg")
+ggsave(Fig2, dpi=300, width = 2491, height = 2037,  units = "px", filename = "FIG2_Leeward_Windward.jpg")
