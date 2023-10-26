@@ -1,4 +1,8 @@
 #LOAD snow DATA and LIBRARIES:=========
+if (!require(broom)) install.packages('broom)')
+if (!require(ggpmisc)) install.packages('ggpmisc')
+if (!require(tidyverse)) install.packages('tidyverse')
+
 library(tidyverse)
 library(broom)
 library(ggpmisc)
@@ -20,7 +24,7 @@ snow2 <- snow %>%
   mutate(aspect2 = ifelse(aspect == "NW", "Windward", "Leeward")) %>%  #Renaming. Moving away from always describing SE and NW: so the reader / reviewer doesn’t have to remember which way the wind is coming from
   #NW in the heading to Windward and SE to Leeward
 
-  mutate(Aspect_OG = ifelse(AreaType == "grass", "Grass", aspect2)) #(OG has no aspects. Shrubs have NW and SE aspects
+  mutate(Aspect_OG = ifelse(AreaType == "grass", "Grass", aspect2)) #OG has no aspects. Shrubs have NW and SE aspects
   
 
 #After merging early and late snow and density into just snow depth and density (for alpine_data_updated.csv)
@@ -49,16 +53,17 @@ snow_stats_OG2 <- na.omit(snow_stats_OG) #Remove NaNs as these give us grey poin
 
 #PLOT Snow Depth and Shrub Height:
 Fig2 <- ggplot(data = snow_stats_OG2, aes(x= snow_depth_cm, y=height_cm))+ #, color= AreaType, data=[snow2$AreaType=="shrub",]
-         geom_point(aes(fill=Richness), size=4, pch=21, alpha=1) +   #, shape=Region, was alpha = 0.9 but makes it too blurry
+         geom_point(aes(color=Richness), size=4,  alpha=1) +   #pch=21, shape=Region, was alpha = 0.9 but makes it too blurry
 
   stat_smooth(method = "lm", col = "black")+
   
-  scale_fill_gradient(low = "deeppink", high = "royalblue")+
-  
+  #scale_color_gradient(low = "deeppink", high = "royalblue")+ #changed to color from fill to remove strong frames around points
+  scale_color_gradient(low = "blue", high =  "firebrick1")+  #Colour pattern consisten with Fig4 and Fig 5
+
   facet_grid(.~Aspect_OG)+
   scale_y_continuous(limits = c(0,100))+
   
-  labs(x = "Snow depth (cm)",y = "Target shrub height (cm)", fill = "Richness: ") + #, color = "Dominant Life Form: "
+  labs(x = "Snow depth (cm)",y = "Target shrub height (cm)", col = "Richness: ") + #, color = "Dominant Life Form: "
   theme_bw()+
   
   theme(axis.text.x = element_text(size = 16, color = "black"),
@@ -69,7 +74,7 @@ Fig2 <- ggplot(data = snow_stats_OG2, aes(x= snow_depth_cm, y=height_cm))+ #, co
         legend.position = c(.15,.65),              #c(0.2, 0.5)
         legend.title = element_text( size=16, face = "bold"),
         legend.text = element_text(size = 12),
-        legend.key = element_rect( fill = "white", color = "black", linetype=2),
+        #legend.key = element_rect( fill = "white", color = "black", linetype=2),
         legend.key=element_blank(), #Removes the frames around the points in legends
         legend.box.background = element_rect(size=2, colour = "white"),
         legend.box.margin = margin(6, 6, 6, 6),
@@ -83,4 +88,4 @@ Fig2 <- ggplot(data = snow_stats_OG2, aes(x= snow_depth_cm, y=height_cm))+ #, co
 
 Fig2
 
-ggsave(Fig2, dpi=300, width = 2491, height = 2037,  units = "px", filename = "FIG2_Leeward_Windward.jpg")
+ggsave(Fig2, dpi=300, width = 2491, height = 2037,  units = "px", filename = "FIG3_HeightDepthRichness_Leeward_Windward.jpg")
