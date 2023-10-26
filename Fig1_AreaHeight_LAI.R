@@ -1,5 +1,7 @@
-#Trait Table S8 of 6 focus plant (Height, LAI, Area_cm3)======
-#Load LIBRARIES:
+#Load DATA + LIBRARIES:=======
+if (!require(vegan)) install.packages('vegan')
+if (!require(tidyverse)) install.packages('tidyverse')
+
 library(tidyverse)
 library(vegan)
 
@@ -13,6 +15,9 @@ snow2 <- snow %>%  #Exclude non-shrubs
 unique(snow2$shrub) #6 focus plants were: "Grevillea.australis",  "Hovea.montana" ,"Orites.lanceolata" , "Epacris.petrophylla","Ozothamnus.alpina",  "Nematolepis.ovatifolia"
 dim(snow2)#2334rows of data
 
+
+#Trait Table (S8) ======
+#Table of target shrub traits: Height, LAI, Area_cm3. 
 
 #AREA/LAI/HEIGHT by FOCUS SPECIES:
 Six_height_cm <- snow2 %>%
@@ -36,17 +41,66 @@ Six_height_cm <- snow2 %>%
 
 
 
-
 Six_height_cm
 names(Six_height_cm)# 6 17
 #write.table(Six_height_cm, file = "6TargetSgrubsTraits_TableS8.txt", sep = ",", quote = FALSE, row.names = F)  #Save as table.txt and then copy into Word, 
-#in Word to get a Word-Table, select it all, go to Table → Convert → Convert Text to Tabl3
+#in Word to get a Word-Table, select it all, go to Table → Convert → Convert Text to Table3
 
 AreaUpdate <- select(Six_height_cm, mean_area_cm3, se_area_cm3) #update after realising it is closer to ellipse than square (0.79*square surface)
 #write.table(AreaUpdate , file = "AreaUpdate_TableS8.txt", sep = ",", quote = FALSE, row.names = F)  #Save as table.txt and then copy into Word, 
 
-#Turning Trait Table 1 (Six_height_cm) into Plot===========
+#PLOT Trait Table===========
 names(Six_height_cm)
+
+#Panel Plot of Table 1:
+Figure1 <- ggplot(Six_height_cm, aes( x =  "", y=mean_height_cm)) +
+  geom_point(aes(size = as.numeric(mean_area_cm3)/10000, color=mean_LAI))+  #,shape=21, colour = "black"
+  scale_shape_manual(values=c(21,22))+
+  
+  #errror bars look like little H letter. We removed them and described them in captions instead:
+  ##geom_errorbar( aes(ymin= mean_height_cm+se_height_cm, ymax = mean_height_cm-se_height_cm), width=.2, colour = "white")+
+  
+  scale_size_area(max_size =20,breaks=c(1,2,3))+
+  scale_y_continuous(limits = c(1, 80),expand = c(0, 0))+
+  #scale_fill_gradient(low = "deeppink", high = "royalblue")+ #scale_fill_gradient(low = "grey", high = "black")+
+  scale_color_gradient(low = "blue", high =  "firebrick1")+  #Colour pattern consistent with Fig4 and Fig 5
+
+  facet_grid(.~Region + shrub_genus + shrub_species) +
+  
+  
+  theme_classic()+
+  labs( x = "", y = "Mean target shrub height (cm)",
+        size =  expression("Canopy area"~(~m^2)),  #size =  expression( "Area(~m^2)")
+        color = "LAI")+   
+  
+  theme(axis.text.x = element_blank(),   #text(size=16,hjust=.5,angle=45,vjust=1,face="italic", color="black"),
+        axis.text.y = element_text(size=16, hjust=.5,vjust=0,face="plain", color="black"),  
+        axis.title.x = element_blank(),    #text(size=22,hjust=0.5,vjust=9,face="plain"),
+        axis.title.y = element_text(size=22),
+        axis.ticks.x.bottom = element_blank(),
+        plot.title = element_text(size=20, lineheight=1.8, face="bold", hjust = 0.5),
+    
+        legend.title = element_text(size=16,face="bold"),  # face="bold"
+        legend.text = element_text(size = 12),
+        legend.key=element_blank(), #Removes the frames around the points in legends
+        legend.box.background = element_rect(),
+        legend.box.margin = margin(6, 6, 6, 6),
+        legend.direction="vertical",
+        
+        strip.text=element_text(size=14, face = "italic"),
+        strip.background = element_rect(colour="white"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        
+        axis.line.x.bottom=element_blank(),
+        
+        legend.box = "horizontal",
+        legend.position = c(0.8 , 0.21)) 
+
+Figure1
+
+ggsave(Figure1, dpi=300, width = 2491, height = 2037, units = "px", filename = "Fig1_HeigtLAI_PINK_Updated.jpg")
 
 #Panel Plot of Table 1:
 Figure1 <- ggplot(Six_height_cm, aes( x =  "", y=mean_height_cm)) +
@@ -97,7 +151,3 @@ Figure1 <- ggplot(Six_height_cm, aes( x =  "", y=mean_height_cm)) +
         legend.position = c(0.8 , 0.25)) 
 
 Figure1
-
-#ggsave(Figure1, dpi=300, width = 2401, height = 2037, units = "px", filename = "Fig1_PINK_RegionsNoShapes.jpg")
-
-
