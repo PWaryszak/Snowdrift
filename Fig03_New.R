@@ -36,7 +36,7 @@ snow_stats_OG <- snow2 %>%
 
   mutate(SampleID = as.factor(SampleID)) %>%
   
-  group_by(SampleID,Aspect_OG, aspect2,Region) %>%
+  group_by(SampleID, Aspect_OG, aspect2,Region) %>%
   
   summarise(snow_depth_cm =  mean(snow_depth_cm, na.rm=T),
             height_cm = mean (height_cm, na.rm=T),
@@ -67,13 +67,13 @@ Fig03 <- ggplot(data = snow_stats_OG2, aes(x= snow_depth_cm, y=height_cm))+ #, c
 
   #"Target shrub height (cm)"
   
-  labs(x = "Snow depth (cm)",y = "", col = "Richness: ") + #, color = "Dominant Life Form: "
+  labs(x = "Snow depth (cm)",y = "Plant height (cm)", col = "Richness: ") + #, color = "Dominant Life Form: "
   theme_bw()+
   
-  theme(axis.text.x = element_text(size = 16, color = "black"),
-        axis.text.y = element_text(size=16, hjust=.5,vjust=0,face="plain", color="black"),
-        axis.title.y = element_text(size = 22),
-        axis.title.x = element_text(size = 22),
+  theme(axis.text.x = element_text(size = 24, color = "black"),
+        axis.text.y = element_text(size=24, hjust=.5,vjust=0,face="plain", color="black"),
+        axis.title.y = element_text(size = 24),
+        axis.title.x = element_text(size = 24),
         
         legend.position = c(.16,.8),              #c(0.2, 0.5)
         legend.title = element_text( size=16, face = "bold"),
@@ -90,5 +90,25 @@ Fig03 <- ggplot(data = snow_stats_OG2, aes(x= snow_depth_cm, y=height_cm))+ #, c
         
         panel.grid.major = element_blank())
 
+
 Fig03
-ggsave(Fig03, dpi=300, width = 2400, height = 2037,  units = "px", filename = "Fig03_Height_SnowDepth_GREY.jpg")
+ggsave(Fig03, dpi=300, width = 2400, height = 2037,  units = "px", filename = "Fig03_Height_SnowDepth_GREY_New.jpg")
+
+
+#Allocation of open grassy (OG) plots across regions:=============
+names(snow_stats_OG2)
+
+grass <- snow_stats_OG2 %>%
+        filter(Aspect_OG == "Grass") %>%
+   group_by( Aspect_OG, SampleID) %>%
+   summarise(N = n())
+
+grass
+
+grass_snow <- snow %>%
+        filter(shrub_code == "OG" | shrub_code == "OG1" |shrub_code == "OG2") %>%
+   group_by(Region,shrub_code, Richness) %>%
+   summarise(N = n())
+
+View(grass_snow)
+write.csv(grass_snow, file = "GrassPresence.csv")#Shows what OG plots where surveyed. NA were not surveyed
