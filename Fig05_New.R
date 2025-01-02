@@ -30,6 +30,11 @@ veg_matrix <- pre_veg_matrix %>%
   summarise_at(vars(Acae_nova:Xero_subu),mean,na.rm=T) #Reversing the triplicates
 
 dim(veg_matrix)#242 114 = 242 plots with total of 113 species columns + SampleID2 columns
+names(veg_matrix)
+
+
+
+
 
 
 #CLEAN VEG data========
@@ -157,5 +162,35 @@ alpinePlot <- ggplot(data=df.sites, aes(x=RDA1, y=RDA2 )) +  # , color= Region
 
 alpinePlot     
 ggsave(alpinePlot, width = 12, height = 7, file = "Fig05_AlpinePlantComposition_RDA_GREY.jpg")
+
+
+
+#ANOVA RDA:  assessing the significance of constraint of aspect:=========
+alpine_rda2 <- rda(df.response ~ aspect, env)
+alpine_rda2
+summary(alpine_rda2)
+
+plot(alpine_rda2, display = c("sites", "bp"), scaling=2)
+screeplot(alpine_rda2)
+
+anova.cca(alpine_rda2, by = "margin")
+
+#Model: rda(formula = df.response ~ aspect, data = env)
+#          Df  Variance      F Pr(>F)
+#aspect     1 0.0000133 0.1334      1
+3Residual 240 0.0240213                     
+
+#ANOVA RDA:  assessing the significance of constraint of region:=========
+alpine_rda3 <- rda(df.response ~ region, env)
+alpine_rda3
+summary(alpine_rda3)
+
+plot(alpine_rda3, display = c("sites", "bp"), scaling=2)
+anova.cca(alpine_rda3, by = "margin")
+
+#Model: rda(formula = df.response ~ aspect, data = env)
+#          Df  Variance      F Pr(>F)
+#aspect     1 0.0000133 0.1334      1
+#Residual 240 0.0240213                     
 
 
